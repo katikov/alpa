@@ -260,6 +260,11 @@ class MeshHostWorker:
         self.sync()
         return max(d.max_memory_allocated() for d in self.local_devices)
 
+    def get_list_memory_allocated(self):
+        self.sync()
+        return [d.max_memory_allocated() for d in self.local_devices]
+        
+    
     def get_available_memory(self):
         self.sync()
         return min(d.available_memory() for d in self.local_devices)

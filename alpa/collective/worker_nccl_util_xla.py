@@ -40,7 +40,7 @@ def send_tile(worker, uuid: int, device_id: int, offset: Sequence[slice],
         src_buffer = jax_tensor_index(xla_buffer_to_jax_tensor(buffer),
                                       start_indices, slice_sizes)
         to_send = jax_tensor_to_xla_buffer(src_buffer)
-        n_elements = np.prod(slice_sizes)
+        n_elements = np.prod(slice_sizes).astype("int32")
         # dummy_compute_on_default_stream(device_id)
 
         # let send stream wait for compute stream
@@ -73,7 +73,7 @@ def recv_tile(worker, uuid: int, device_id: int,
         tmp_buffer = device_put(jnp.ones(slice_shape, dtype=buffer.dtype),
                                 worker.local_devices[device_id])
         to_recv = jax_tensor_to_xla_buffer(tmp_buffer)
-        n_elements = np.prod(slice_shape)
+        n_elements = np.prod(slice_shape).astype("int32")
         # let recv stream wait for d2d stream
         col.comm_wait_compute(group_name, False, False, device_id)
         # let recv stream wait for compute stream

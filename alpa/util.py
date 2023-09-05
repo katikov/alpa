@@ -482,7 +482,7 @@ def compile_concatenate(mesh_shape, sharding_spec, batch_size, batch_dim, aval):
     concated = xc.ops.ConcatInDim(c, operands, batch_dim)
     hlo_module = c.build(concated).as_hlo_module()
 
-    num_devices = np.prod(mesh_shape)
+    num_devices = np.prod(mesh_shape).astype("int32")
     build_random_seed = global_config.compile_random_seed
     compile_options = get_compile_options(
         num_replicas=1,
@@ -556,7 +556,7 @@ def get_shard_shape(aval: ShapedArray, sharding_spec: pxla.ShardingSpec):
         if isinstance(spec_dim, pxla.NoSharding):
             shape.append(dim)
         elif isinstance(spec_dim, pxla.Chunked):
-            shape.append(dim // np.prod(spec_dim.chunks))
+            shape.append(dim // np.prod(spec_dim.chunks).astype("int32"))
         elif isinstance(spec_dim, pxla.Unstacked):
             shape.append(spec_dim.size)
     return tuple(shape)
@@ -710,7 +710,7 @@ def process_remat(closed_jaxpr: ClosedJaxpr):
                 continue
             if isinstance(var, DropVar):
                 continue
-            in_bytes += np.prod(var.aval.shape) * np.dtype(
+            in_bytes += np.prod(var.aval.shape).astype("int32") * np.dtype(
                 var.aval.dtype).itemsize
         return in_bytes == 0
 
@@ -1013,7 +1013,7 @@ def profile_xla_executable(compiled, backend, local_devices):
     input_bytes = 0
     for shape in input_shapes:
         input_bytes += np.prod(
-            shape.dimensions()) * shape.numpy_dtype().itemsize
+            shape.dimensions()).astype("int32") * shape.numpy_dtype().itemsize
     if free_mem < compiled.total_allocation_size() and free_mem != -1:
         return cost_failed
 
@@ -1165,7 +1165,7 @@ def infer_offset_and_n_elements(tensor_slice):
     """
     slice_shape = tuple(ind.stop - ind.start for ind in tensor_slice)
     offset = tuple()
-    n_elements = np.prod(slice_shape)
+    n_elements = np.prod(slice_shape).astype("int32")
     for dim, dim_shape in enumerate(slice_shape):
         offset = offset + (tensor_slice[dim].start,)
         if dim_shape > 1:
@@ -1641,7 +1641,7 @@ def compute_bytes(pytree: PyTreeDef):
     ret = 0
     for x in flatten_args:
         if hasattr(x, "shape"):
-            ret += np.prod(x.shape) * x.dtype.itemsize
+            ret += np.prod(x.shape).astype("int32") * x.dtype.itemsize
     return ret
 
 
@@ -1651,7 +1651,7 @@ def compute_param_number(pytree: PyTreeDef):
     ret = 0
     for x in flatten_args:
         if hasattr(x, "shape"):
-            ret += np.prod(x.shape)
+            ret += np.prod(x.shape).astype("int32")
     return ret
 
 

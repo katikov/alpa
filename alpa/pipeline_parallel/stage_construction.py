@@ -18,6 +18,7 @@ from alpa.pipeline_parallel.stage_profiling import (get_compute_cost,
                                                     last_compute_cost_file_name)
 from alpa.shard_parallel.auto_sharding import AutoShardingOption
 from alpa.timer import timers
+from time import time
 from alpa.util import OrderedSet, maybe_numba_jit, jaxpr_to_hlo
 
 logger = logging.getLogger(__name__)
@@ -624,6 +625,8 @@ def cluster_layers_and_slice_mesh(
             virtual_mesh.num_hosts, virtual_mesh.num_devices_per_host,
             stage_option.submesh_physical_shape_space,
             stage_option.manually_specified_submeshes)
+        
+        submesh_choices = submesh_choices[:1] # DEBUG: 
         autosharding_configs = get_all_submesh_autosharding_config_choices(
             virtual_mesh, submesh_choices,
             stage_option.submesh_logical_shape_space, batch_size)
@@ -635,6 +638,8 @@ def cluster_layers_and_slice_mesh(
             accumulator_mapping, acc_grad_invars, acc_grad_outvars,
             jax_apply_layers, apply_grad_global_info, num_micro_batches,
             default_as_option, stage_option, inference_mode)
+        
+        dp_start = time() # show dp time
         if inference_mode:
             _, solution = inference_dp(num_layers, virtual_mesh.num_devices,
                                        submesh_choices,
@@ -644,7 +649,8 @@ def cluster_layers_and_slice_mesh(
                                       num_micro_batches, submesh_choices,
                                       num_autosharding_configs, compute_cost,
                                       max_n_succ_stages)
-
+        dp_end = time()
+        print(f"######-------dp takes {dp_end - dp_start} seconds")
         assert solution is not None, "no solution in auto stage construction."
 
         # Parse solution

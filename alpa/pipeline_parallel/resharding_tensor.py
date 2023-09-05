@@ -13,6 +13,8 @@ from alpa.device_mesh import VirtualPhysicalMesh
 def unflatten_tile_index(index, shape):
     """Unroll a flattened index based on the given shape."""
     unflattened_index = []
+    if len(shape) == 0:
+        return unflattened_index
     reminder = index
     for i in range(len(shape) - 1):
         cur_index = int(reminder / np.prod(shape[i + 1:]))
@@ -155,7 +157,7 @@ class VirtualDistributedArray:
         orders."""
         if self._tiles is None:
             # Below are for tiled or partial_tiled.
-            num_tiles = np.prod(self.tile_shape)
+            num_tiles = np.prod(self.tile_shape).astype("int32")
             # unique tiles (not counting those replicated)
             self._tiles = np.empty(self.tile_shape, dtype=object)
             for tile_index_flat in range(num_tiles):
